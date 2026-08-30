@@ -1,0 +1,51 @@
+# ${API_UPSTREAM} 由官方 nginx 镜像启动脚本 envsubst 渲染（见 Dockerfile 注释），
+# 渲染后是写死的静态地址，非 nginx 运行时变量，无需 resolver
+server {
+    listen       80;
+    server_name  _;
+    server_tokens off;
+
+    root   /usr/share/nginx/html;
+    index  index.html;
+
+    # 运行时 gzip（构建期未产出 .gz，无需 gzip_static）
+    gzip on;
+    gzip_vary on;
+    gzip_comp_level 5;
+    gzip_min_length 1k;
+    gzip_types text/plain text/css application/json application/javascript
+               application/xml image/svg+xml;
+
+    # ============ 后端反代：dev 时 vite proxy 的活，生产由 nginx 承接 ============
+    # handicap-service（Go，:8080）：/api/v1 主接口 + /guyuzhoudb 直播工具
+    # proxy_pass 末尾不带 URI → 原样透传完整路径（后端路由本身带这两个前缀）
+    location ~ ^/(api|guyuzhoudb)/ {
+        proxy_pass ${API_UPSTREAM};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+
+    # index.html 永不缓存：发版即生效（入口引用的是新 hash 文件名）
+    location = /index.html {
+        add_header Cache-Control "no-cache";
+    }
+
+    # Vite 产物（assets/ 下 js/css/img/fonts 文件名均带内容 hash）：
+    # 一年长缓存 + immutable（单头写法，避免与 expires 指令叠加出双 Cache-Control）
+    # try_files $uri =404：资源缺失直接 404，绝不回退 index.html（避免白屏难排查）
+    location /assets/ {
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        try_files $uri =404;
+    }
+
+    # SPA history 路由兜底：/login 等深链刷新不 404
+    # 顺序语义：$uri（命中静态文件，public/ 下 logo.ico/icons.svg 等）→ $uri/（目录）→ /index.html（路由交给前端）
+    # public/ 文件名不带 hash，不走 immutable 长缓存（默认 ETag/Last-Modified 协商缓存，更新可及时生效）
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}

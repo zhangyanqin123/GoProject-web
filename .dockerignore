@@ -1,0 +1,30 @@
+# 版本控制 / 文档（与镜像构建无关）
+.git
+.gitignore
+.oxlintrc.json
+*.md
+
+# 依赖与构建产物（最关键：本地 node_modules 必须剔除）
+node_modules
+dist
+tmp
+*.tgz
+logs
+*.log*
+
+# 本地环境残留（防止宿主机 .env.*.local 以更高优先级混入构建）
+.env
+*.local
+
+# IDE / 编辑器 / 系统
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+.DS_Store
+
+# Docker 自身（不进 context；注意不能排除 nginx/ —— Dockerfile 要 COPY 模板进镜像）
+Dockerfile
+.dockerignore

@@ -30,3 +30,19 @@ If you are developing a production application, we recommend enabling type-aware
 ```
 
 See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+
+## 容器化（Docker）
+
+多阶段构建：`node:22-alpine` 构建 → `nginx:stable-alpine` 托管。dev 时 vite proxy 转发的 `/api`、`/guyuzhoudb` 在生产由 nginx 反代到后端（handicap-service :8080），后端地址运行时通过 `API_UPSTREAM` 注入，一镜像多环境：
+
+```bash
+# 构建（弱网换源：--build-arg NODE_IMAGE=docker.m.daocloud.io/library/node:22-alpine
+#       NGINX_IMAGE=docker.m.daocloud.io/library/nginx:stable-alpine）
+docker build -t goproject-web .
+
+# 后端在宿主机 :8080（默认 host.docker.internal，Docker Desktop 开箱即用；
+# Linux 需追加 --add-host=host.docker.internal:host-gateway）
+docker run -d -p 8081:80 --name goproject-web goproject-web
+
+# 后端在其它地址：-e API_UPSTREAM=http://<backend-host>:8080
+```
