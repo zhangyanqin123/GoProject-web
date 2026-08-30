@@ -1,14 +1,16 @@
 // 管理台布局：浅色侧边栏 + 白色 Header（当前页标题 + 用户下拉）+ 灰底内容区
 // 整体 100vh 固定：Sider/Header 固定，仅 Content 滚动（避免整页滚动导致的割裂感）
 import { useMemo } from 'react'
-import { Avatar, Dropdown, Layout, Menu, theme } from 'antd'
+import { Avatar, Dropdown, Layout, Menu, Switch, theme } from 'antd'
 import {
   TeamOutlined, UserOutlined, FileTextOutlined, SwapOutlined,
   ShoppingOutlined, VideoCameraOutlined, LogoutOutlined, FundViewOutlined,
+  MoonOutlined, SunOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
+import { useThemeMode } from '@/hooks/useThemeMode'
 
 const { Header, Sider, Content } = Layout
 
@@ -26,6 +28,7 @@ const AdminLayout = () => {
   const navigate = useNavigate()
   const { pathname } = useLocation()
   const { user, logout } = useAuth()
+  const { mode, toggle: toggleTheme } = useThemeMode()
   const { token: themeToken } = theme.useToken()
 
   const activeKey = useMemo(() => `/${pathname.split('/')[1]}`, [pathname])
@@ -65,17 +68,26 @@ const AdminLayout = () => {
           }}
         >
           <span style={{ fontSize: 16, fontWeight: 600, color: themeToken.colorTextHeading }}>{activeLabel}</span>
-          <Dropdown
-            menu={{
-              items: [{ key: 'logout', icon: <LogoutOutlined />, label: '退出登录' }],
-              onClick: ({ key }) => key === 'logout' && logout(),
-            }}
-          >
-            <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, color: themeToken.colorText }}>
-              <Avatar size={28} style={{ background: themeToken.colorPrimary }} icon={<UserOutlined />} />
-              {user?.name ?? '-'}
-            </span>
-          </Dropdown>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <Switch
+              checkedChildren={<MoonOutlined />}
+              unCheckedChildren={<SunOutlined />}
+              checked={mode === 'dark'}
+              onChange={toggleTheme}
+              aria-label="切换主题"
+            />
+            <Dropdown
+              menu={{
+                items: [{ key: 'logout', icon: <LogoutOutlined />, label: '退出登录' }],
+                onClick: ({ key }) => key === 'logout' && logout(),
+              }}
+            >
+              <span style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, color: themeToken.colorText }}>
+                <Avatar size={28} style={{ background: themeToken.colorPrimary }} icon={<UserOutlined />} />
+                {user?.name ?? '-'}
+              </span>
+            </Dropdown>
+          </div>
         </Header>
 
         <Content style={{ overflow: 'auto', padding: 20 }}>

@@ -29,3 +29,12 @@ body {
 *::-webkit-scrollbar-track {
   background: transparent;
 }
+
+/* 暗黑主题联动（antd darkAlgorithm 只管组件，body 背景/滚动条经 html[data-theme] 接管） */
+html[data-theme='dark'] body {
+  background: #141414; /* 对齐 antd dark 默认 colorBgLayout */
+}
+
+html[data-theme='dark'] *::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}

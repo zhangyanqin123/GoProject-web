@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 import { login } from '@/api/auth'
 import { useAuth } from '@/hooks/useAuth'
+import { useThemeMode } from '@/hooks/useThemeMode'
 
 interface LoginForm {
   username: string
@@ -16,6 +17,7 @@ const LoginPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { onLoginSuccess } = useAuth()
+  const { mode } = useThemeMode()
   const [form] = Form.useForm<LoginForm>()
   const [loading, setLoading] = useState(false)
 
@@ -49,7 +51,10 @@ const LoginPage = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'linear-gradient(135deg, #e8f0ff 0%, #f5f7fa 55%)',
+        // 亮色蓝灰渐变；暗黑下换同构深色渐变（呼应 #141414 layout 底）
+        background: mode === 'dark'
+          ? 'linear-gradient(135deg, #141a26 0%, #141414 55%)'
+          : 'linear-gradient(135deg, #e8f0ff 0%, #f5f7fa 55%)',
       }}
     >
       <Card style={{ width: 380, boxShadow: '0 6px 24px rgba(0, 21, 41, 0.08)', borderRadius: 10 }} styles={{ body: { padding: '12px 8px 8px' } }}>

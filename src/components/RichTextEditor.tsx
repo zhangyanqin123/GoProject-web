@@ -1,5 +1,6 @@
 // wangeditor 受控封装：value(HTML)/onChange；卸载 destroy 防重复挂载与内存泄漏
 import { useEffect, useRef, useState } from 'react'
+import { theme } from 'antd'
 import { Editor, Toolbar } from '@wangeditor/editor-for-react'
 import type { IDomEditor, IEditorConfig, IToolbarConfig } from '@wangeditor/editor'
 import '@wangeditor/editor/dist/css/style.css'
@@ -19,6 +20,7 @@ const toolbarConfig: Partial<IToolbarConfig> = {
 const RichTextEditor = ({ value, onChange, height = 300, placeholder = '请输入内容...' }: Props) => {
   const [editor, setEditor] = useState<IDomEditor | null>(null)
   const editorRef = useRef<IDomEditor | null>(null)
+  const { token: themeToken } = theme.useToken()
 
   // 组件卸载时销毁编辑器实例（React 18 StrictMode 双挂载下必做）
   useEffect(() => {
@@ -43,9 +45,10 @@ const RichTextEditor = ({ value, onChange, height = 300, placeholder = '请输�
     },
   }
 
+  // 外框/工具栏分割线用 antd token 跟随主题；wangeditor 内部画布自带白底不跟暗黑（第三方限制）
   return (
-    <div style={{ border: '1px solid #d9d9d9', borderRadius: 6, zIndex: 100 }}>
-      <Toolbar editor={editor} defaultConfig={toolbarConfig} mode="default" style={{ borderBottom: '1px solid #d9d9d9' }} />
+    <div style={{ border: `1px solid ${themeToken.colorBorder}`, borderRadius: 6, zIndex: 100 }}>
+      <Toolbar editor={editor} defaultConfig={toolbarConfig} mode="default" style={{ borderBottom: `1px solid ${themeToken.colorBorder}` }} />
       <Editor
         defaultConfig={editorConfig}
         value={value}

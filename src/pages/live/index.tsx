@@ -1,7 +1,7 @@
 // 直播工具调试页（小鹅通透传，公开接口）：① register_user 按手机号幂等注册换 user_id
 // ② get_login_url 用该 user_id 换登录链接（有效期 1 分钟，即取即用）——两步顺序依赖
 import { useState } from 'react'
-import { Alert, Button, Card, Form, Input, Select, Space, Typography, message } from 'antd'
+import { Alert, Button, Card, Form, Input, Select, Space, Typography, message, theme } from 'antd'
 import { CopyOutlined } from '@ant-design/icons'
 
 import { getXeLoginURL, registerXeUser } from '@/api/live'
@@ -25,6 +25,7 @@ const LOGIN_TYPE_OPTIONS = [
 ]
 
 const LivePage = () => {
+  const { token: themeToken } = theme.useToken()
   const [registerForm] = Form.useForm<RegisterForm>()
   const [loginForm] = Form.useForm<LoginForm>()
   const [registering, setRegistering] = useState(false)
@@ -104,7 +105,7 @@ const LivePage = () => {
         </Form>
 
         {loginUrl && (
-          <div style={{ marginTop: 16, padding: 12, background: '#f6f8fa', borderRadius: 6 }}>
+          <div style={{ marginTop: 16, padding: 12, background: themeToken.colorFillQuaternary, borderRadius: 6 }}>
             <Typography.Paragraph copyable={{ text: loginUrl, icon: [<CopyOutlined key="i" />, <span key="t"> 复制链接</span>] }} style={{ marginBottom: 0, wordBreak: 'break-all' }}>
               login_url（1 分钟内有效）：{loginUrl}
             </Typography.Paragraph>
