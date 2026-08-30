@@ -38,3 +38,14 @@ html[data-theme='dark'] body {
 html[data-theme='dark'] *::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.18);
 }
+
+/* 浏览器 autofill 强制白底（-internal-autofill-selected，background-color 覆盖不了）
+   —— 暗黑下用 inset shadow hack 压回容器底色；text-fill-color 必须一并覆盖否则文字仍黑 */
+html[data-theme='dark'] input:-webkit-autofill,
+html[data-theme='dark'] input:-webkit-autofill:hover,
+html[data-theme='dark'] input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #141414 inset;
+  -webkit-text-fill-color: rgba(255, 255, 255, 0.85);
+  caret-color: rgba(255, 255, 255, 0.85);
+  transition: background-color 99999s ease-out; /* 防 focus 瞬间回弹原生染色 */
+}
