@@ -2,7 +2,7 @@
 // 创建页：商品下拉（含价格库存、售罄禁用）+ 数量（上限=库存）+ 金额/可得积分实时计算；
 // 下单成功跳列表页观察 stock/points/notify 三步骤异步翻转（需后端 cmd/consumer + RabbitMQ）
 import { useCallback, useEffect, useState } from 'react'
-import { Alert, Button, Card, Form, Input, InputNumber, Select, Table, Tabs, message } from 'antd'
+import { Alert, Button, Card, Form, Input, InputNumber, Select, Table, Tabs, message, theme } from 'antd'
 import { ShoppingCartOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 
@@ -21,6 +21,7 @@ interface NotifyQueryForm { title?: string }
 
 // ---------- Tab 1：创建订单 ----------
 const OrderCreate = ({ onCreated }: { onCreated: () => void }) => {
+  const { token: themeToken } = theme.useToken()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -84,9 +85,9 @@ const OrderCreate = ({ onCreated }: { onCreated: () => void }) => {
           />
         </Form.Item>
         <Form.Item label="订单金额">
-          <span style={{ fontSize: 18, color: '#f5222d', fontWeight: 600 }}>￥{watchedAmount.toFixed(2)}</span>
+          <span style={{ fontSize: 18, color: themeToken.colorError, fontWeight: 600 }}>￥{watchedAmount.toFixed(2)}</span>
           {watched && (
-            <span style={{ color: '#999', marginLeft: 8, fontSize: 12 }}>
+            <span style={{ color: themeToken.colorTextTertiary, marginLeft: 8, fontSize: 12 }}>
               = ￥{watched.price} × {quantity ?? 0}（下单可得 {Math.floor(watchedAmount)} 积分）
             </span>
           )}

@@ -1,12 +1,13 @@
 // 绑定业务员弹窗：上半已绑定业务员分页小表格（默认 5）；下半 tags 手输 user_ids 提交绑定。
 // 后端无业务员候选列表接口（旧版人员树来自远程 mock），故手动输入数字 ID（追加语义幂等）
 import { useCallback, useEffect, useState } from 'react'
-import { Alert, Button, Modal, Select, Table, message } from 'antd'
+import { Alert, Button, Modal, Select, Table, message, theme } from 'antd'
 
 import { bindTeacherSales, listBoundSalesUserIds, listTeacherSales, type TeacherRow, type TeacherSalesRow } from '@/api/teacher'
 import { text } from '@/utils/format'
 
 const BindSalesmanModal = ({ row, onClose }: { row: TeacherRow | null; onClose: () => void }) => {
+  const { token: themeToken } = theme.useToken()
   const [list, setList] = useState<TeacherSalesRow[]>([])
   const [count, setCount] = useState(0)
   const [page, setPage] = useState(1)
@@ -104,7 +105,7 @@ const BindSalesmanModal = ({ row, onClose }: { row: TeacherRow | null; onClose: 
           open={false} // 纯输入收集，不提供候选下拉
         />
         {boundIds.length > 0 && (
-          <div style={{ marginTop: 8, color: '#999', fontSize: 12 }}>
+          <div style={{ marginTop: 8, color: themeToken.colorTextTertiary, fontSize: 12 }}>
             当前全量已绑定 userId（参考）：{boundIds.join('、')}
           </div>
         )}

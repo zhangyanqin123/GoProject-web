@@ -1,8 +1,9 @@
 // 用户管理：列表（username 模糊筛选 + 分页）+ 新增/编辑弹窗 + Popconfirm 删除
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Card, Form, Input, message, Popconfirm, Space, Table } from 'antd'
+import { Button, Card, Form, Input, message, Popconfirm, Space, Table, theme } from 'antd'
 import { PlusOutlined, ReloadOutlined, SearchOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
+import type { GlobalToken } from 'antd'
 
 import { deleteAdminUser, listAdminUsers, type AdminUserRow } from '@/api/adminUser'
 import { USER_STATUS } from '@/constants/dicts'
@@ -16,7 +17,8 @@ interface QueryForm {
   username: string
 }
 
-const columns = (currentUsername: string, onEdit: (row: AdminUserRow) => void, onDelete: (row: AdminUserRow) => void): ColumnsType<AdminUserRow> => [
+// 模块级工厂（非组件不能调 hook），主题 token 由组件 useToken 后传入
+const columns = (currentUsername: string, onEdit: (row: AdminUserRow) => void, onDelete: (row: AdminUserRow) => void, themeToken: GlobalToken): ColumnsType<AdminUserRow> => [
   { title: 'ID', dataIndex: 'id', width: 60 },
   { title: '用户名', dataIndex: 'username', width: 140 },
   { title: '昵称', dataIndex: 'nickname', width: 140 },
@@ -34,10 +36,10 @@ const columns = (currentUsername: string, onEdit: (row: AdminUserRow) => void, o
         <a onClick={() => onEdit(row)}>编辑</a>
         {/* 不能删当前登录账号（后端也拒，前端先禁） */}
         {row.username === currentUsername ? (
-          <span style={{ color: '#999', cursor: 'not-allowed' }}>删除</span>
+          <span style={{ color: themeToken.colorTextTertiary, cursor: 'not-allowed' }}>删除</span>
         ) : (
           <Popconfirm title={`确定删除用户「${row.username}」？删除后该账号立即下线。`} onConfirm={() => onDelete(row)}>
-            <a style={{ color: '#ff4d4f' }}>删除</a>
+            <a style={{ color: themeToken.colorError }}>删除</a>
           </Popconfirm>
         )}
       </Space>
@@ -47,6 +49,7 @@ const columns = (currentUsername: string, onEdit: (row: AdminUserRow) => void, o
 
 const UserPage = () => {
   const [form] = Form.useForm<QueryForm>()
+  const { token: themeToken } = theme.useToken()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<AdminUserRow | null>(null)
   const currentUsername = getUsername()
@@ -102,7 +105,7 @@ const UserPage = () => {
         bordered
         loading={loading}
         dataSource={list}
-        columns={columns(currentUsername, (row) => { setEditing(row); setModalOpen(true) }, handleDelete)}
+        columns={columns(currentUsername, (row) => { setEditing(row); setModalOpen(true) }, handleDelete, themeToken)}
         pagination={{
           current: page,
           pageSize,

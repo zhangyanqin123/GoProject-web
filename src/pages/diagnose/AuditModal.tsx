@@ -1,6 +1,6 @@
 // 审核弹窗（专业/合规，按当前状态定环节）：通过直传换算表；驳回展开富文本原因（必填）后提交
 import { useEffect, useState } from 'react'
-import { Button, Descriptions, Modal, Space, Tag, message } from 'antd'
+import { Button, Descriptions, Modal, Space, Tag, message, theme } from 'antd'
 
 import { auditDiagnose, type DiagnoseRow } from '@/api/diagnose'
 import { AUDIT_TARGET, auditStageOf } from '@/constants/diagnose'
@@ -15,6 +15,7 @@ interface Props {
 }
 
 const AuditModal = ({ row, onClose, onDone }: Props) => {
+  const { token: themeToken } = theme.useToken()
   const [rejecting, setRejecting] = useState(false) // 驳回原因编辑态（嵌套展开）
   const [rejectReason, setRejectReason] = useState('')
   const [saving, setSaving] = useState(false)
@@ -90,7 +91,7 @@ const AuditModal = ({ row, onClose, onDone }: Props) => {
 
           {rejecting && (
             <div style={{ marginTop: 16 }}>
-              <div style={{ marginBottom: 8, fontWeight: 600, color: '#cf1322' }}>驳回原因（必填，富文本）</div>
+              <div style={{ marginBottom: 8, fontWeight: 600, color: themeToken.colorError }}>驳回原因（必填，富文本）</div>
               <RichTextEditor value={rejectReason} onChange={setRejectReason} height={220} placeholder="请填写驳回原因..." />
             </div>
           )}
