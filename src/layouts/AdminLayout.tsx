@@ -9,7 +9,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/hooks/useThemeMode'
-import { APP_PAGES, tabKeyOf } from '@/router/pages'
+import { APP_PAGES, findPage, tabKeyOf } from '@/router/pages'
 
 const { Header, Sider, Content } = Layout
 
@@ -82,7 +82,16 @@ const AdminLayout = () => {
           </div>
         </Header>
 
-        <Content style={{ overflow: 'auto', padding: 20 }}>
+        <Content style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+          {/* keep-alive 页面区：本阶段只渲染激活页（后续多标签改为全量常驻 + 隐藏） */}
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: 20 }}>
+            {(() => {
+              const page = findPage(activeKey)
+              if (!page) return null // 未知/根路径：等路由重定向，本帧留白（与改造前行为一致）
+              return <div style={{ height: '100%', overflow: 'auto' }}>{page.element}</div>
+            })()}
+          </div>
+          {/* 路由出口只剩重定向职责（index/* 的 Navigate）；页面子路由 element=null 渲染无 DOM */}
           <Outlet />
         </Content>
       </Layout>

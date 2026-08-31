@@ -28,7 +28,8 @@ const routes = [
         element: <AdminLayout />,
         children: [
           { index: true, element: <Navigate to={HOME_PATH} replace /> },
-          ...APP_PAGES.map((p) => ({ path: p.path.slice(1), element: p.element })),
+          // element 置 null：页面由 AdminLayout keep-alive 手动渲染；路由仅声明 URL 合法性（否则 * 兜底会吞掉深链）
+          ...APP_PAGES.map((p) => ({ path: p.path.slice(1), element: null })),
           { path: '*', element: <Navigate to={HOME_PATH} replace /> },
         ],
       },
