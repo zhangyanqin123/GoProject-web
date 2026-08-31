@@ -46,8 +46,14 @@ COPY --from=build /app/dist/ /usr/share/nginx/html/
 # 顺序颠倒时靠 --restart unless-stopped 拉起重试
 ENV API_UPSTREAM=http://handicap-server:8080
 
+# 版本溯源：构建时 --build-arg IMAGE_TAG=v... 打进镜像（deploy.sh 自动传），
+# tag 被 prune 清掉后 docker inspect 容器/镜像的 Env 仍可查到构建版本
+ARG IMAGE_TAG=unknown
+ENV IMAGE_TAG=${IMAGE_TAG}
+
 EXPOSE 80
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+# interval 收紧到 5s：nginx 静态站秒起，deploy.sh 的健康门禁无需苦等 30s
+HEALTHCHECK --interval=5s --timeout=3s --start-period=5s --retries=3 \
   CMD wget -q --spider http://127.0.0.1/ || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]
