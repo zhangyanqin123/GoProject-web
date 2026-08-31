@@ -77,7 +77,7 @@ const UserPage = () => {
 
   return (
     // 页面标题由全局 tab 栏承载，Card 不再带 head；新增/刷新按钮挪进筛选表单行
-    <Card>
+    <Card variant="borderless" style={{ borderRadius: 0 }}>
       <Form form={form} layout="inline" style={{ marginBottom: 16 }} onFinish={() => search(getQuery)}>
         <Form.Item name="username">
           <Input placeholder="用户名（模糊匹配）" allowClear style={{ width: 200 }} />

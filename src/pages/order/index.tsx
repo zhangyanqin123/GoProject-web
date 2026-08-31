@@ -280,7 +280,7 @@ const OrderPage = () => {
 
   return (
     // 页面标题由全局 tab 栏承载，Card 不再带 head
-    <Card>
+    <Card variant="borderless" style={{ borderRadius: 0 }}>
       <Tabs activeKey={activeTab} onChange={setActiveTab} type="card" items={items} />
     </Card>
   )
