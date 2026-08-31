@@ -53,6 +53,35 @@ export interface OrderCreateReq {
   quantity: number // 1-999，上限=所选商品库存
 }
 
+// 商品管理（/products/*，契约见 PLAN-product-crud.md）；Product 是下拉精简型，管理列表用 ProductRow 全字段
+export interface ProductRow {
+  id: number
+  product_name: string
+  price: number
+  stock: number
+  created_at: string
+  updated_at: string
+}
+
+export interface ProductListQuery {
+  product_name?: string // 模糊，空串不过滤
+}
+
+export interface ProductSaveReq {
+  product_name: string
+  price: number
+  stock: number // 0 合法（售罄）
+}
+
+export const listProductsPage = (query: ProductListQuery & PageReq) =>
+  post<PageResp<ProductRow>>('/products/list', cleanQuery(query))
+
+export const addProduct = (data: ProductSaveReq) => post<null>('/products/add', data)
+
+export const editProduct = (data: ProductSaveReq & { id: number }) => post<null>('/products/edit', data)
+
+export const deleteProduct = (data: { id: number }) => post<null>('/products/delete', data)
+
 export interface OrderListQuery {
   order_no?: string // 精确
   product_name?: string // 模糊（快照列）

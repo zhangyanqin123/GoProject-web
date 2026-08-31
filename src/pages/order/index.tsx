@@ -1,6 +1,7 @@
-// 订单管理：Tabs 四页（创建订单 / 订单列表 / 积分列表 / 通知列表）
+// 订单管理：Tabs 五页（创建订单 / 商品列表 / 订单列表 / 积分列表 / 通知列表）
 // 创建页：商品下拉（含价格库存、售罄禁用）+ 数量（上限=库存）+ 金额/可得积分实时计算；
 // 下单成功跳列表页观察 stock/points/notify 三步骤异步翻转（需后端 cmd/consumer + RabbitMQ）
+// 商品列表：商品增删改查（/products/*，见 PLAN-product-crud.md）
 import { useCallback, useEffect, useState } from 'react'
 import { Alert, Button, Card, Form, Input, InputNumber, Select, Table, Tabs, message, theme } from 'antd'
 import { ShoppingCartOutlined } from '@ant-design/icons'
@@ -14,13 +15,15 @@ import { IS_READ, ORDER_STATUS, ORDER_STATUS_FILTER, STEP_STATUS } from '@/const
 import StatusTag from '@/components/StatusTag'
 import { usePagedList } from '@/hooks/usePagedList'
 import { text } from '@/utils/format'
+import ProductTab from './ProductTab'
 
 interface OrderQueryForm { order_no?: string; product_name?: string; status?: number }
 interface PointsQueryForm { order_no?: string }
 interface NotifyQueryForm { title?: string }
 
 // ---------- Tab 1：创建订单 ----------
-const OrderCreate = ({ onCreated }: { onCreated: () => void }) => {
+// productsKey 变化（商品列表 tab 增删改后）重新拉商品下拉，保证两个 tab 数据一致
+const OrderCreate = ({ onCreated, productsKey }: { onCreated: () => void; productsKey: number }) => {
   const { token: themeToken } = theme.useToken()
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(false)
@@ -33,7 +36,7 @@ const OrderCreate = ({ onCreated }: { onCreated: () => void }) => {
       .then(setProducts)
       .catch(() => undefined)
       .finally(() => setLoading(false))
-  }, [])
+  }, [productsKey])
 
   // 受控重算：Form.useWatch 驱动金额/积分实时展示
   const quantity = Form.useWatch('quantity', form)
@@ -265,9 +268,11 @@ const NotifyTab = () => {
 const OrderPage = () => {
   const [activeTab, setActiveTab] = useState('create')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [productsKey, setProductsKey] = useState(0)
 
   const items = [
-    { key: 'create', label: '创建订单', children: <OrderCreate onCreated={() => { setRefreshKey((k) => k + 1); setActiveTab('list') }} /> },
+    { key: 'create', label: '创建订单', children: <OrderCreate onCreated={() => { setRefreshKey((k) => k + 1); setActiveTab('list') }} productsKey={productsKey} /> },
+    { key: 'products', label: '商品列表', children: <ProductTab onMutated={() => setProductsKey((k) => k + 1)} /> },
     { key: 'list', label: '订单列表', children: <OrderListTab refreshKey={refreshKey} /> },
     { key: 'points', label: '积分列表', children: <PointsTab /> },
     { key: 'notify', label: '通知列表', children: <NotifyTab /> },
