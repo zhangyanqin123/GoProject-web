@@ -76,17 +76,8 @@ const UserPage = () => {
   }
 
   return (
-    <Card
-      title="用户管理"
-      extra={
-        <Space>
-          <Button icon={<PlusOutlined />} type="primary" onClick={() => { setEditing(null); setModalOpen(true) }}>
-            新增用户
-          </Button>
-          <Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />
-        </Space>
-      }
-    >
+    // 页面标题由全局 tab 栏承载，Card 不再带 head；新增/刷新按钮挪进筛选表单行
+    <Card>
       <Form form={form} layout="inline" style={{ marginBottom: 16 }} onFinish={() => search(getQuery)}>
         <Form.Item name="username">
           <Input placeholder="用户名（模糊匹配）" allowClear style={{ width: 200 }} />
@@ -95,6 +86,10 @@ const UserPage = () => {
           <Space>
             <Button type="primary" htmlType="submit" icon={<SearchOutlined />}>查询</Button>
             <Button onClick={() => { form.resetFields(); reset({ username: '' }) }}>重置</Button>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); setModalOpen(true) }}>
+              新增用户
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />
           </Space>
         </Form.Item>
       </Form>

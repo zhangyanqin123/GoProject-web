@@ -126,7 +126,8 @@ const DiagnosePage = () => {
   useEffect(() => { search(getQuery) }, [])
 
   return (
-    <Card title="诊股记录" extra={<Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />}>
+    // 页面标题由全局 tab 栏承载，Card 不再带 head；刷新按钮挪进筛选表单行
+    <Card>
       <Form form={form} layout="inline" style={{ marginBottom: 16, rowGap: 12 }} onFinish={() => search(getQuery)}>
         <Form.Item name="id"><InputNumber placeholder="ID" style={{ width: 110 }} min={1} precision={0} /></Form.Item>
         <Form.Item name="user_nick_name"><Input placeholder="用户昵称（模糊）" allowClear style={{ width: 140 }} /></Form.Item>
@@ -150,6 +151,9 @@ const DiagnosePage = () => {
         </Form.Item>
         <Form.Item>
           <Button onClick={() => { form.resetFields(); reset({}) }}>重置</Button>
+        </Form.Item>
+        <Form.Item>
+          <Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />
         </Form.Item>
       </Form>
 

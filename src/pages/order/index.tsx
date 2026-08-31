@@ -279,7 +279,8 @@ const OrderPage = () => {
   ]
 
   return (
-    <Card title="订单管理">
+    // 页面标题由全局 tab 栏承载，Card 不再带 head
+    <Card>
       <Tabs activeKey={activeTab} onChange={setActiveTab} type="card" items={items} />
     </Card>
   )

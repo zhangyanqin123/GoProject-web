@@ -59,17 +59,8 @@ const ResignPage = () => {
   useEffect(() => { search(getQuery) }, [])
 
   return (
-    <Card
-      title="离职转移"
-      extra={
-        <>
-          <Button type="primary" icon={<PlusOutlined />} style={{ marginRight: 8 }} onClick={() => setAddOpen(true)}>
-            新增转移
-          </Button>
-          <Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />
-        </>
-      }
-    >
+    // 页面标题由全局 tab 栏承载，Card 不再带 head；新增/刷新按钮挪进筛选表单行
+    <Card>
       <Form form={form} layout="inline" style={{ marginBottom: 16, rowGap: 12 }} onFinish={() => search(getQuery)}>
         <Form.Item name="original_teacher"><Input placeholder="原老师姓名（模糊）" allowClear style={{ width: 160 }} /></Form.Item>
         <Form.Item name="replace_teacher"><Input placeholder="接收老师姓名（模糊）" allowClear style={{ width: 160 }} /></Form.Item>
@@ -83,6 +74,12 @@ const ResignPage = () => {
         </Form.Item>
         <Form.Item>
           <Button onClick={() => { form.resetFields(); reset({}) }}>重置</Button>
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddOpen(true)}>新增转移</Button>
+        </Form.Item>
+        <Form.Item>
+          <Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />
         </Form.Item>
       </Form>
 

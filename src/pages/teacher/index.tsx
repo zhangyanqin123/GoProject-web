@@ -97,10 +97,8 @@ const TeacherPage = () => {
   useEffect(() => { search(getQuery) }, [])
 
   return (
-    <Card
-      title="老师管理"
-      extra={<Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />}
-    >
+    // 页面标题由全局 tab 栏承载，Card 不再带 head；刷新按钮挪进筛选表单行
+    <Card>
       <Form form={form} layout="inline" style={{ marginBottom: 16, rowGap: 12 }} onFinish={() => search(getQuery)} initialValues={{ status: -1 }}>
         <Form.Item name="id"><InputNumber placeholder="ID" style={{ width: 110 }} min={1} precision={0} /></Form.Item>
         <Form.Item name="account"><Input placeholder="老师账号（模糊）" allowClear style={{ width: 150 }} /></Form.Item>
@@ -123,6 +121,9 @@ const TeacherPage = () => {
         </Form.Item>
         <Form.Item>
           <Button onClick={() => { form.resetFields(); form.setFieldsValue({ status: -1 }); reset({}) }}>重置</Button>
+        </Form.Item>
+        <Form.Item>
+          <Button icon={<ReloadOutlined />} onClick={reload} title="刷新" />
         </Form.Item>
       </Form>
 
