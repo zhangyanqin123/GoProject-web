@@ -1,7 +1,7 @@
-// 管理台布局：浅色侧边栏 + 白色 Header（当前页标题 + 用户下拉）+ 灰底内容区
-// 整体 100vh 固定：Sider/Header 固定，仅 Content 滚动（避免整页滚动导致的割裂感）
-import { useMemo } from 'react'
-import { Avatar, Dropdown, Layout, Menu, Switch, theme } from 'antd'
+// 管理台布局：浅色侧边栏 + 白色 Header（用户下拉）+ 内容区多标签（keep-alive 页签）
+// 整体 100vh 固定：Sider/Header 固定，仅各页签内容滚动（避免整页滚动导致的割裂感）
+import { useEffect, useMemo, useState } from 'react'
+import { Avatar, Dropdown, Layout, Menu, Switch, Tabs, theme } from 'antd'
 import {
   UserOutlined, LogoutOutlined, FundViewOutlined, MoonOutlined, SunOutlined,
 } from '@ant-design/icons'
@@ -9,7 +9,7 @@ import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/hooks/useThemeMode'
-import { APP_PAGES, findPage, tabKeyOf } from '@/router/pages'
+import { APP_PAGES, HOME_PATH, findPage, tabKeyOf } from '@/router/pages'
 
 const { Header, Sider, Content } = Layout
 
@@ -25,6 +25,33 @@ const AdminLayout = () => {
 
   const activeKey = useMemo(() => tabKeyOf(pathname), [pathname])
   const activeLabel = useMemo(() => APP_PAGES.find((m) => m.path === activeKey)?.label ?? '', [activeKey])
+
+  // F5/深链初始化：常驻 tab + 当前 URL 对应 tab（不做持久化，刷新即回默认）
+  const initOpenTabs = (initPathname: string): string[] => {
+    const key = tabKeyOf(initPathname)
+    return key !== HOME_PATH && findPage(key) ? [HOME_PATH, key] : [HOME_PATH]
+  }
+
+  const [openTabs, setOpenTabs] = useState<string[]>(() => initOpenTabs(pathname))
+
+  // URL 驱动补 tab：菜单点击/前进后退/深链统一入口（includes 判重，StrictMode 双跑幂等）
+  useEffect(() => {
+    if (!findPage(activeKey)) return // 未知路径：等 * 兜底重定向，不建脏 tab
+    setOpenTabs((prev) => (prev.includes(activeKey) ? prev : [...prev, activeKey]))
+  }, [activeKey])
+
+  // 关 tab：关激活 tab 时优先激活右侧、无右侧取左侧（HOME 常驻保证 next 非空）
+  const closeTab = (key: string) => {
+    if (key === HOME_PATH) return
+    const idx = openTabs.indexOf(key)
+    if (idx < 0) return
+    const nextTabs = openTabs.filter((k) => k !== key)
+    setOpenTabs(nextTabs)
+    if (key === activeKey) {
+      const next = nextTabs[idx] ?? nextTabs[idx - 1]
+      if (next) navigate(next)
+    }
+  }
 
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
@@ -83,13 +110,32 @@ const AdminLayout = () => {
         </Header>
 
         <Content style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-          {/* keep-alive 页面区：本阶段只渲染激活页（后续多标签改为全量常驻 + 隐藏） */}
+          {/* 多标签栏：editable-card 的 chip 底色/边框/激活态全走 token，明暗主题自动适配 */}
+          <div style={{ flex: 'none', padding: '4px 16px 0', background: themeToken.colorBgContainer }}>
+            <Tabs
+              type="editable-card"
+              hideAdd
+              style={{ marginBottom: 0 }}
+              activeKey={openTabs.includes(activeKey) ? activeKey : HOME_PATH}
+              items={openTabs.flatMap((key) => {
+                const page = findPage(key)
+                return page ? [{ key, label: page.label, closable: key !== HOME_PATH }] : []
+              })}
+              onChange={(key) => navigate(key)}
+              onEdit={(targetKey, action) => action === 'remove' && closeTab(String(targetKey))}
+            />
+          </div>
+          {/* keep-alive：所有已开 tab 常驻渲染，非激活 display:none 隐藏——状态/滚动保留、切回不重发请求 */}
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: 20 }}>
-            {(() => {
-              const page = findPage(activeKey)
-              if (!page) return null // 未知/根路径：等路由重定向，本帧留白（与改造前行为一致）
-              return <div style={{ height: '100%', overflow: 'auto' }}>{page.element}</div>
-            })()}
+            {openTabs.flatMap((key) => {
+              const page = findPage(key)
+              if (!page) return []
+              return [
+                <div key={key} style={{ display: key === activeKey ? 'block' : 'none', height: '100%', overflow: 'auto' }}>
+                  {page.element}
+                </div>,
+              ]
+            })}
           </div>
           {/* 路由出口只剩重定向职责（index/* 的 Navigate）；页面子路由 element=null 渲染无 DOM */}
           <Outlet />
