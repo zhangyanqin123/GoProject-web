@@ -6,12 +6,7 @@ import { Spin } from 'antd'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import AdminLayout from '@/layouts/AdminLayout'
 import LoginPage from '@/pages/login'
-import TeacherPage from '@/pages/teacher'
-import ResignPage from '@/pages/resign'
-import DiagnosePage from '@/pages/diagnose'
-import UserPage from '@/pages/user'
-import OrderPage from '@/pages/order'
-import LivePage from '@/pages/live'
+import { APP_PAGES, HOME_PATH } from '@/router/pages'
 import { getToken } from '@/utils/token'
 
 // 无 token 踢登录（带 redirect 回跳）；token 未 ready（getinfo 重放中）显示 Spin
@@ -32,14 +27,9 @@ const routes = [
       {
         element: <AdminLayout />,
         children: [
-          { index: true, element: <Navigate to="/teacher" replace /> },
-          { path: 'teacher', element: <TeacherPage /> },
-          { path: 'resign', element: <ResignPage /> },
-          { path: 'diagnose', element: <DiagnosePage /> },
-          { path: 'users', element: <UserPage /> },
-          { path: 'order', element: <OrderPage /> },
-          { path: 'live', element: <LivePage /> },
-          { path: '*', element: <Navigate to="/teacher" replace /> },
+          { index: true, element: <Navigate to={HOME_PATH} replace /> },
+          ...APP_PAGES.map((p) => ({ path: p.path.slice(1), element: p.element })),
+          { path: '*', element: <Navigate to={HOME_PATH} replace /> },
         ],
       },
     ],

@@ -3,26 +3,18 @@
 import { useMemo } from 'react'
 import { Avatar, Dropdown, Layout, Menu, Switch, theme } from 'antd'
 import {
-  TeamOutlined, UserOutlined, FileTextOutlined, SwapOutlined,
-  ShoppingOutlined, VideoCameraOutlined, LogoutOutlined, FundViewOutlined,
-  MoonOutlined, SunOutlined,
+  UserOutlined, LogoutOutlined, FundViewOutlined, MoonOutlined, SunOutlined,
 } from '@ant-design/icons'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '@/hooks/useAuth'
 import { useThemeMode } from '@/hooks/useThemeMode'
+import { APP_PAGES, tabKeyOf } from '@/router/pages'
 
 const { Header, Sider, Content } = Layout
 
-// 菜单与路由一一对应（单 admin 角色，固定菜单；不 over-engineer 动态权限）
-const MENU_ITEMS = [
-  { key: '/teacher', icon: <TeamOutlined />, label: '老师管理' },
-  { key: '/resign', icon: <SwapOutlined />, label: '离职转移' },
-  { key: '/diagnose', icon: <FileTextOutlined />, label: '诊股记录' },
-  { key: '/users', icon: <UserOutlined />, label: '用户管理' },
-  { key: '/order', icon: <ShoppingOutlined />, label: '订单管理' },
-  { key: '/live', icon: <VideoCameraOutlined />, label: '直播工具' },
-]
+// 菜单项从页面注册表派生（单 admin 角色，固定菜单；不 over-engineer 动态权限）
+const menuItems = APP_PAGES.map(({ path, label, icon }) => ({ key: path, label, icon }))
 
 const AdminLayout = () => {
   const navigate = useNavigate()
@@ -31,8 +23,8 @@ const AdminLayout = () => {
   const { mode, toggle: toggleTheme } = useThemeMode()
   const { token: themeToken } = theme.useToken()
 
-  const activeKey = useMemo(() => `/${pathname.split('/')[1]}`, [pathname])
-  const activeLabel = useMemo(() => MENU_ITEMS.find((m) => m.key === activeKey)?.label ?? '', [activeKey])
+  const activeKey = useMemo(() => tabKeyOf(pathname), [pathname])
+  const activeLabel = useMemo(() => APP_PAGES.find((m) => m.path === activeKey)?.label ?? '', [activeKey])
 
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
@@ -48,7 +40,7 @@ const AdminLayout = () => {
           theme="light"
           mode="inline"
           selectedKeys={[activeKey]}
-          items={MENU_ITEMS}
+          items={menuItems}
           onClick={({ key }) => navigate(key)}
           style={{ borderInlineEnd: 'none', padding: '4px 8px' }}
         />
