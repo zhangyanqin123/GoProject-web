@@ -23,6 +23,18 @@ instance.interceptors.request.use((config) => {
 // 401 跳转去重：单设备互踢时并发请求会同时 401，防多次 toast / 多次跳转
 let redirecting = false
 
+// 弹窗去重：接口不通时页面并发请求会同时失败，相同文案 3s 窗口内只弹一条
+// （antd message 默认展示 3s，窗口=展示时长 ⇒ 任意时刻同文案至多一条在屏）；不同文案互不影响
+const TOAST_DEDUPE_MS = 3000
+const recentToasts = new Map<string, number>()
+
+const toastError = (msg: string) => {
+  const now = Date.now()
+  if (now - (recentToasts.get(msg) ?? 0) < TOAST_DEDUPE_MS) return
+  recentToasts.set(msg, now)
+  message.error(msg)
+}
+
 instance.interceptors.response.use(
   (response: AxiosResponse): AxiosResponse => {
     const body = response.data as ApiResponse<unknown>
@@ -34,7 +46,7 @@ instance.interceptors.response.use(
       return response
     }
     // HTTP 200 但业务失败（login 失败即此形态），交调用方处理
-    if (!response.config.silent) message.error(body.msg || '请求失败')
+    if (!response.config.silent) toastError(body.msg || '请求失败')
     return Promise.reject(new ApiError(body.code, body.msg)) as unknown as AxiosResponse
   },
   (error: AxiosError<ApiResponse<unknown>>) => {
@@ -52,7 +64,7 @@ instance.interceptors.response.use(
       return Promise.reject(new ApiError(401, bodyMsg || '登录已过期，请重新登录'))
     }
     const msg = bodyMsg || (error.code === 'ECONNABORTED' ? '请求超时' : '网络异常，请稍后重试')
-    if (!config?.silent) message.error(msg)
+    if (!config?.silent) toastError(msg)
     return Promise.reject(new ApiError(response?.status ?? -1, msg))
   },
 )
