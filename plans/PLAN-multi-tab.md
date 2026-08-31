@@ -1,6 +1,6 @@
 # PLAN-multi-tab：管理台多标签页（multi-tab + keep-alive）
 
-> 状态：实施中（2026-08-31 立项）。本文档为实施计划 + 实测记录回填处。
+> 状态：已完成（2026-08-31 实施完毕并实测通过）。本文档为实施计划 + 实测记录。
 
 ## 背景与目标
 
@@ -66,6 +66,22 @@
 - `display:none` 重置滚动位置：实测；fallback 为 `visibility:'hidden'; height:0; overflow:hidden` 或存 scrollTop 恢复
 - 改动面 = 1 新文件 + 2 文件修改，每阶段独立 commit 可逐级 revert
 
-## 实测记录（实施后回填）
+## 实测记录（2026-08-31 回填）
 
-（待回填）
+实施四阶段各一 commit（dcfb7dc / e3539ee / f3cbf2b / 收尾见最新），dev server + Playwright 端到端实测：
+
+**Phase 1（注册表重构）**：typecheck/lint 通过；登录、菜单切换、深链 `/diagnose`、`/foobar`→`/teacher` 与改造前一致；`teacher/list` 2 次/页 = StrictMode effect 双跑基线（`usePagedList` 竞态丢弃即为此设计），非双挂载。
+
+**Phase 2（keep-alive 渲染链路）**：`element: null` 显式写法 console 零 warning（省略会触发 RR leaf 警告的判断成立）；`diagnose/list` 恰 2 次仍为基线（若 Outlet+手动渲染双挂载会 4 次）；整页无滚动条（`documentElement.scrollHeight <= clientHeight`），Content overflow hidden、页面 wrapper overflow auto；`/foobar` 与 `/` 重定向经保留的 Outlet 正常执行。
+
+**Phase 3（tab 状态机）**：清单 1~9 全过——
+- 登录落 /teacher 仅一个无 X 常驻 tab；新菜单开新 tab、已开菜单激活对应 tab，Menu selectedKeys 与 tab activeKey 恒一致（同一派生源 tabKeyOf）
+- keep-alive：诊股页筛选「贵州」切走切回保留，`diagnose/list` 零新增；订单页内嵌「商品列表」业务子 tab 切走切回仍激活
+- 关 tab 三态：关中间激活（诊股，左右有订单）→ 激活右侧 /order；关最右激活 → 激活左侧 /teacher 并 URL 同步；关非激活 → 激活态不动（误点验证了一次，行为正确）
+- F5 于 /order → tabs=[/teacher, /order]；浏览器后退到已关闭的 /diagnose → tab 重新追加并激活（URL 驱动按需补 tab 的设计行为）；前进正常
+- 滚动保留：600px 视口老师页滚到底（scrollTop=389）切走切回不丢（`display:none` 不重置滚动位置，无需 fallback）
+- 820px 窄窗口 6 tab 全开 → navWrap 溢出，antd 自动收进 more 下拉
+
+**Phase 4（收尾）**：删 activeLabel 后 typecheck 无 unused 告警；暗黑模式断言全 token 算法色（chip `rgba(255,255,255,.04)`/边框 `rgb(48,48,48)`/激活底 `rgb(20,20,20)`/主色 `rgb(22,104,220)`；浅色激活 chip 白底主色字、底边框融入内容区即若依观感）；退出登录 → /login，重登回跳 /order 且 tab 从零初始化；console 全程 0 error 0 warning（React 层面）。
+
+**lint 基线**：新增 2 类 warning 均与项目既有基线一致——`pages.tsx` 3 条 `only-export-components`（useAuth/useThemeMode 同款）、`AdminLayout.tsx` 1 条 `set-state-in-effect`（openTabs 是「URL 历史 + 用户关闭」累计态不可纯派生，effect 同步路由是正当场景，项目已有 7 处同类）。

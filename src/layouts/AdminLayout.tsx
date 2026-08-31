@@ -1,4 +1,4 @@
-// 管理台布局：浅色侧边栏 + 白色 Header（用户下拉）+ 内容区多标签（keep-alive 页签）
+// 管理台布局：浅色侧边栏 + 白色 Header（主题开关 + 用户下拉）+ 内容区多标签（keep-alive 页签）
 // 整体 100vh 固定：Sider/Header 固定，仅各页签内容滚动（避免整页滚动导致的割裂感）
 import { useEffect, useMemo, useState } from 'react'
 import { Avatar, Dropdown, Layout, Menu, Switch, Tabs, theme } from 'antd'
@@ -24,7 +24,6 @@ const AdminLayout = () => {
   const { token: themeToken } = theme.useToken()
 
   const activeKey = useMemo(() => tabKeyOf(pathname), [pathname])
-  const activeLabel = useMemo(() => APP_PAGES.find((m) => m.path === activeKey)?.label ?? '', [activeKey])
 
   // F5/深链初始化：常驻 tab + 当前 URL 对应 tab（不做持久化，刷新即回默认）
   const initOpenTabs = (initPathname: string): string[] => {
@@ -86,8 +85,8 @@ const AdminLayout = () => {
             lineHeight: 'normal',
           }}
         >
-          <span style={{ fontSize: 16, fontWeight: 600, color: themeToken.colorTextHeading }}>{activeLabel}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* 当前页标题由 tab 栏承载，Header 只留主题开关 + 用户下拉 */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginLeft: 'auto' }}>
             <Switch
               checkedChildren={<MoonOutlined />}
               unCheckedChildren={<SunOutlined />}
