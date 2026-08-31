@@ -125,7 +125,7 @@ const AdminLayout = () => {
             />
           </div>
           {/* keep-alive：所有已开 tab 常驻渲染，非激活 display:none 隐藏——状态/滚动保留、切回不重发请求 */}
-          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', padding: 20 }}>
+          <div style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
             {openTabs.flatMap((key) => {
               const page = findPage(key)
               if (!page) return []
