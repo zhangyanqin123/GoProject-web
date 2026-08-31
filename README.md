@@ -40,9 +40,12 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 #       NGINX_IMAGE=docker.m.daocloud.io/library/nginx:stable-alpine）
 docker build -t goproject-web .
 
-# 后端在宿主机 :8080（默认 host.docker.internal，Docker Desktop 开箱即用；
-# Linux 需追加 --add-host=host.docker.internal:host-gateway）
-docker run -d -p 8081:80 --name goproject-web goproject-web
+# 后端为 GoProject 仓库的 docker compose 全栈（docker compose up -d，server 容器名
+# handicap-server，不映射宿主机端口）——本容器加入其网络直连：
+docker run -d -p 80:80 --name goproject-web --network goproject_default \
+  --restart unless-stopped goproject-web
 
 # 后端在其它地址：-e API_UPSTREAM=http://<backend-host>:8080
+# （API_UPSTREAM 是静态地址，nginx 启动时解析——先起后端再起本容器；
+#   顺序颠倒时 --restart 会反复拉起重试直到解析成功）
 ```

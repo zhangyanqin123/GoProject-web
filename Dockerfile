@@ -40,9 +40,11 @@ COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # dev vite proxy（/api、/guyuzhoudb → localhost:8080）在生产由 nginx 反代承接。
-# 默认 host.docker.internal 指向宿主机后端（Docker Desktop 开箱即用；
-# Linux 需 --add-host=host.docker.internal:host-gateway）
-ENV API_UPSTREAM=http://host.docker.internal:8080
+# 默认直连 GoProject 仓库 compose 网络内的 handicap-server 容器（容器内端口，无宿主机映射）：
+# 运行需 --network goproject_default（GoProject 目录 compose up 创建的网络）。
+# nginx 静态 proxy_pass 启动时解析容器名——先起后端 compose 再起本容器，
+# 顺序颠倒时靠 --restart unless-stopped 拉起重试
+ENV API_UPSTREAM=http://handicap-server:8080
 
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
