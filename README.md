@@ -38,8 +38,9 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 发版统一走 `deploy.sh`——镜像按版本 tag 命名、旧版本保留可回滚、部署失败自动回退：
 
 ```bash
-./deploy.sh deploy            # 发版：构建 v日期-时分秒-git短hash 镜像 → 切换容器 → 健康门禁(60s) → 失败自动回滚上一版
-./deploy.sh deploy v1.2.0     # 手动指定语义版本号（缺省自动生成）
+./deploy.sh deploy            # 发版：patch +1（1.2.3 → 1.2.4）→ 切换容器 → 健康门禁(60s) → 失败自动回滚上一版
+./deploy.sh deploy minor      # minor +1（1.2.3 → 1.3.0，新功能用）；major 同理（→ 2.0.0）
+./deploy.sh deploy 1.2.0      # 显式指定版本号
 ./deploy.sh rollback prev     # 回滚上一版（rollback <tag> 回任意历史版；不带参数 = 列出版本）
 ./deploy.sh list              # 版本列表（标注当前运行）
 ./deploy.sh prune [-n]        # 清理旧版本（保留最近 KEEP 个，默认 5；-n 只看清单不删）
@@ -54,15 +55,16 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 
 约定与行为：
 
+- 版本号语义化三段式（`大.小.补丁`），自动从现有最大版本 bump；无历史版本时首版 `1.0.0`
 - 容器始终运行**具体版本 tag**，`latest` 只是当前运行版本的指针别名（deploy/rollback 成功后自动重指）
 - build 失败直接退出、旧容器毫发无损；新版本健康检查不过则自动切回上一版
-- 脏工作区发版会标记 `-dirty` 并警告（无法精确对应到一次提交）；正常流程是先提交再发版
-- 版本号打进镜像（`IMAGE_TAG` env），tag 被 prune 清掉后 `docker inspect` 仍可溯源
+- 版本号与 git 提交打进镜像（`IMAGE_TAG` / `GIT_REV` env），tag 被 prune 清掉后 `docker inspect` 仍可溯源
+- 脏工作区发版会警告（建议先提交再发版，镜像 `GIT_REV` 记录的是当时 HEAD）
 - 前提：后端 GoProject 仓库的 compose 已起——本容器加入其 `goproject_default` 网络直连 `handicap-server`；nginx 静态 `proxy_pass` 启动时解析容器名，先起后端再发前端，顺序颠倒靠 `--restart unless-stopped` 自愈
 
 回滚演练：
 
 ```bash
-./deploy.sh deploy            # 新版本上线（如 v20260831-161638-11b2d67）
+./deploy.sh deploy minor      # 新功能上线（如 1.2.0）
 ./deploy.sh rollback prev     # 发现问题，立即退回上一版
 ```

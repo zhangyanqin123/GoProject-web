@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # goproject-web 版本化发版 / 回滚
-# 镜像按版本 tag 命名（v日期-时间-git短hash），旧版本保留可回滚；
+# 镜像按语义版本 tag 命名（1.2.0 风格），旧版本保留可回滚；
 # 容器始终运行具体版本 tag，latest 只是「当前运行版本」的指针别名。
 # 兼容 macOS 自带 bash 3.2：不用 mapfile / declare -A / 裸算术自增，去重计数交 awk。
 set -euo pipefail
@@ -64,32 +64,45 @@ preflight() {
   fi
 }
 
-# 版本 tag：v日期-时分秒-git短hash；脏工作区加 -dirty（不阻塞）；同秒撞名加 -2
-gen_tag() {
-  local tag
-  tag="v$(date +%Y%m%d-%H%M%S)-$(git rev-parse --short HEAD)"
-  if git status --porcelain | grep -q .; then
-    tag="${tag}-dirty"
-    warn "工作区不干净，镜像标记 -dirty（无法精确对应到一次提交）"
-  fi
-  if docker image inspect "$REPO:$tag" >/dev/null 2>&1; then tag="${tag}-2"; fi
-  echo "$tag"
-}
-
-# 构建：版本 tag + latest 双打标；弱网换源环境变量非空才透传（防空串覆盖默认值）
+# 构建：版本 tag + latest 双打标；GIT_REV 记录构建时代码提交（语义 tag 不含 hash，靠它溯源）；
+# 弱网换源环境变量非空才透传（防空串覆盖默认值）
 build_img() { # $1=tag
   docker build \
     ${NODE_IMAGE:+--build-arg NODE_IMAGE=$NODE_IMAGE} \
     ${NGINX_IMAGE:+--build-arg NGINX_IMAGE=$NGINX_IMAGE} \
     ${NPM_REGISTRY:+--build-arg NPM_REGISTRY=$NPM_REGISTRY} \
     --build-arg IMAGE_TAG="$1" \
+    --build-arg GIT_REV="$(git rev-parse --short HEAD)" \
     -t "$REPO:$1" -t "$REPO:latest" .
 }
 
-# 版本 tag 列表，字典序降序。tag 含定长时间戳（vYYYYMMDD-HHMMSS-hash），字典序即构建顺序；
-# 不能信 docker images 的排序——BuildKit 层缓存命中时连续构建的镜像 CreatedAt 相同，顺序不可靠
+# 版本 tag 列表，版本感知降序（sort -t. 分段数字排：1.10.0 > 1.9.0，字典序会错；
+# 历史 v2026xxx 等非数字 tag 按首段 0 排最后，天然沉底）。同样不能信 docker images
+# 的输出顺序——BuildKit 层缓存命中时连续构建的镜像 CreatedAt 相同
 version_tags() {
-  docker images "$REPO" --format '{{.Tag}}' | grep -Ev '^(latest|<none>)$' | sort -r || true
+  docker images "$REPO" --format '{{.Tag}}' | grep -Ev '^(latest|<none>)$' \
+    | sort -t. -k1,1nr -k2,2nr -k3,3nr || true
+}
+
+# 下一个语义版本：取现有最大 x.y.z 按指定段位 bump（patch/minor/major）；
+# 无语义版本历史时以 1.0.0 为首版（不 bump）；撞名则 patch 递增直到未占用
+next_version() { # $1=patch|minor|major
+  local base ma mi pa new
+  base=$(docker images "$REPO" --format '{{.Tag}}' \
+    | awk -F. 'NF==3 && $1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ {print}' \
+    | sort -t. -k1,1nr -k2,2nr -k3,3nr | head -1)
+  if [ -z "$base" ]; then echo "1.0.0"; return 0; fi
+  IFS=. read -r ma mi pa <<< "$base"
+  case "$1" in
+    major) ma=$((ma + 1)); mi=0; pa=0 ;;
+    minor) mi=$((mi + 1)); pa=0 ;;
+    *)     pa=$((pa + 1)) ;;
+  esac
+  new="$ma.$mi.$pa"
+  while docker image inspect "$REPO:$new" >/dev/null 2>&1; do
+    pa=$((pa + 1)); new="$ma.$mi.$pa"
+  done
+  echo "$new"
 }
 
 cmd_list() {
@@ -101,14 +114,27 @@ cmd_list() {
   echo "  （latest 是当前运行版本的指针别名，不算独立版本）"
 }
 
-cmd_deploy() { # $1=可选手动版本号（如 v1.2.0）
+cmd_deploy() { # $1=可省: patch(缺省)|minor|major|显式 x.y.z
   preflight
   if [ "${CHECK:-}" = "1" ]; then
     info "==> CHECK=1: 构建前先跑 typecheck"
     npm run typecheck
   fi
-  local tag prev prev_id
-  if [ -n "${1:-}" ]; then tag="$1"; else tag=$(gen_tag); fi
+  local tag arg="${1:-}"
+  if [ -z "$arg" ] || [ "$arg" = "patch" ] || [ "$arg" = "minor" ] || [ "$arg" = "major" ]; then
+    tag=$(next_version "${arg:-patch}")
+  elif [[ "$arg" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    tag="$arg"
+  else
+    err "无效版本: ${arg}（应为 patch | minor | major 或 x.y.z 形如 1.2.0）"
+    exit 1
+  fi
+  docker image inspect "$REPO:$tag" >/dev/null 2>&1 \
+    && { err "镜像 $REPO:$tag 已存在，换一个版本号或用 bump 关键字"; exit 1; }
+  if git status --porcelain | grep -q .; then
+    warn "工作区不干净，建议先提交再发版（本镜像 GIT_REV 记录的是当前 HEAD）"
+  fi
+  local prev prev_id
   prev=$(current_image)   # 人类可读引用；可能为空 = 首次部署
   prev_id=$(docker inspect -f '{{.Image}}' "$CONTAINER" 2>/dev/null || true)
 
@@ -200,7 +226,7 @@ cmd_prune() { # $1=-n 干跑
   # 版本 tag 字典序降序（即新→旧），按镜像 ID 去重、保留最近 KEEP 个，其余列出；
   # 当前运行版本计入保留名额（它就是「最近 KEEP 个」之一）但无论何时都不删
   victims=$(docker images "$REPO" --no-trunc --format '{{.Tag}}\t{{.ID}}' \
-    | awk -F'\t' '$1!="latest" && $1!="<none>"' | sort -r \
+    | awk -F'\t' '$1!="latest" && $1!="<none>"' | sort -t. -k1,1nr -k2,2nr -k3,3nr \
     | awk -F'\t' -v cur="$cur_id" -v keep="$KEEP" '!seen[$2]++ { n++; if (n>keep && $2!=cur) print $1 }')
   if [ -z "$victims" ]; then info "无需清理（保留最近 $KEEP 个版本）"; return 0; fi
   echo "将删除以下旧版本（保留最近 $KEEP 个）:"
@@ -220,8 +246,9 @@ goproject-web 版本化发版 / 回滚
 
 用法: ./deploy.sh <命令>
 
-  deploy [tag]   发版：构建版本镜像（缺省自动 v日期-时分秒-git短hash，可传 v1.2.0 覆盖）
-                 → 切换容器 → 健康门禁（60s）→ 失败自动回滚上一版
+  deploy [bump]  发版：构建语义版本镜像 → 切换容器 → 健康门禁（60s）→ 失败自动回滚上一版
+                 bump 缺省 patch（1.2.3→1.2.4）；minor（→1.3.0）/ major（→2.0.0）升对应段位；
+                 或显式版本号 ./deploy.sh deploy 1.2.0；无历史版本时首版 1.0.0
   rollback       列出可回滚版本（标注当前运行）
   rollback prev  回滚到上一版本
   rollback <tag> 回滚到指定历史版本

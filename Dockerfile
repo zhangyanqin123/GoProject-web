@@ -46,10 +46,13 @@ COPY --from=build /app/dist/ /usr/share/nginx/html/
 # 顺序颠倒时靠 --restart unless-stopped 拉起重试
 ENV API_UPSTREAM=http://handicap-server:8080
 
-# 版本溯源：构建时 --build-arg IMAGE_TAG=v... 打进镜像（deploy.sh 自动传），
-# tag 被 prune 清掉后 docker inspect 容器/镜像的 Env 仍可查到构建版本
+# 版本溯源：构建时 --build-arg IMAGE_TAG=... / GIT_REV=<git短hash> 打进镜像（deploy.sh 自动传），
+# tag 被 prune 清掉后 docker inspect 容器/镜像的 Env 仍可查到构建版本与代码提交
+# （语义版本号 1.2.0 不含 hash，代码对应关系靠 GIT_REV）
 ARG IMAGE_TAG=unknown
 ENV IMAGE_TAG=${IMAGE_TAG}
+ARG GIT_REV=unknown
+ENV GIT_REV=${GIT_REV}
 
 EXPOSE 80
 # interval 收紧到 5s：nginx 静态站秒起，deploy.sh 的健康门禁无需苦等 30s
