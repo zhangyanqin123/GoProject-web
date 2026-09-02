@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import {
   TeamOutlined, SwapOutlined, FileTextOutlined, UserOutlined, ShoppingOutlined, VideoCameraOutlined,
+  AppstoreOutlined,
 } from '@ant-design/icons'
 
 import TeacherPage from '@/pages/teacher'
@@ -11,6 +12,7 @@ import DiagnosePage from '@/pages/diagnose'
 import UserPage from '@/pages/user'
 import OrderPage from '@/pages/order'
 import LivePage from '@/pages/live'
+import ABModulePage from '@/pages/abmodule'
 
 export interface AppPage {
   path: string       // 一级路径（菜单 key / tab key）
@@ -26,6 +28,7 @@ export const APP_PAGES: AppPage[] = [
   { path: '/users',    label: '用户管理', icon: <UserOutlined />,       element: <UserPage /> },
   { path: '/order',    label: '订单管理', icon: <ShoppingOutlined />,   element: <OrderPage /> },
   { path: '/live',     label: '直播工具', icon: <VideoCameraOutlined />, element: <LivePage /> },
+  { path: '/abmodule', label: 'AB 模块配置', icon: <AppstoreOutlined />, element: <ABModulePage /> },
 ]
 
 export const HOME_PATH = APP_PAGES[0].path // 常驻不可关闭 tab（/teacher）
