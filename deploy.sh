@@ -257,7 +257,7 @@ goproject-web 版本化发版 / 回滚
 
 环境变量（均缺省不传，非空才生效）:
   NODE_IMAGE / NGINX_IMAGE / NPM_REGISTRY   弱网换源，如 NPM_REGISTRY=https://registry.npmmirror.com
-  API_UPSTREAM   后端地址（缺省镜像内 http://handicap-server:8080）
+  API_UPSTREAM   后端地址（缺省镜像内 http://gyz-server:8080）
   KEEP           prune 保留版本数（默认 5）
   CHECK=1        构建前先跑 npm run typecheck（弱网下 docker build 前快速失败）
 EOF

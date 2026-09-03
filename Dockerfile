@@ -40,11 +40,11 @@ COPY nginx/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 
 # dev vite proxy（/api、/guyuzhoudb → localhost:8080）在生产由 nginx 反代承接。
-# 默认直连 GoProject 仓库 compose 网络内的 handicap-server 容器（容器内端口，无宿主机映射）：
+# 默认直连 GoProject 仓库 compose 网络内的 gyz-server 容器（容器内端口，无宿主机映射）：
 # 运行需 --network goproject_default（GoProject 目录 compose up 创建的网络）。
 # nginx 静态 proxy_pass 启动时解析容器名——先起后端 compose 再起本容器，
 # 顺序颠倒时靠 --restart unless-stopped 拉起重试
-ENV API_UPSTREAM=http://handicap-server:8080
+ENV API_UPSTREAM=http://gyz-server:8080
 
 # 版本溯源：构建时 --build-arg IMAGE_TAG=... / GIT_REV=<git短hash> 打进镜像（deploy.sh 自动传），
 # tag 被 prune 清掉后 docker inspect 容器/镜像的 Env 仍可查到构建版本与代码提交

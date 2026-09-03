@@ -17,7 +17,7 @@ server {
                application/xml image/svg+xml;
 
     # ============ 后端反代：dev 时 vite proxy 的活，生产由 nginx 承接 ============
-    # handicap-service（Go，:8080）：/api/v1 主接口 + /guyuzhoudb 直播工具 + /swagger 文档
+    # gyz-service（Go，:8080）：/api/v1 主接口 + /guyuzhoudb 直播工具 + /swagger 文档
     # （server 容器不映射宿主机端口，/swagger 是浏览器看接口文档的唯一入口）
     # proxy_pass 末尾不带 URI → 原样透传完整路径（后端路由本身带这些前缀）
     location ~ ^/(api|guyuzhoudb|swagger)/ {

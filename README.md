@@ -33,7 +33,7 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 
 ## 容器化（Docker）与版本化发版
 
-多阶段构建：`node:22-alpine` 构建 → `nginx:stable-alpine` 托管。dev 时 vite proxy 转发的 `/api`、`/guyuzhoudb` 在生产由 nginx 反代到后端（handicap-service :8080），后端地址运行时通过 `API_UPSTREAM` 注入，一镜像多环境。
+多阶段构建：`node:22-alpine` 构建 → `nginx:stable-alpine` 托管。dev 时 vite proxy 转发的 `/api`、`/guyuzhoudb` 在生产由 nginx 反代到后端（gyz-service :8080），后端地址运行时通过 `API_UPSTREAM` 注入，一镜像多环境。
 
 发版统一走 `deploy.sh`——镜像按版本 tag 命名、旧版本保留可回滚、部署失败自动回退：
 
@@ -48,7 +48,7 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 
 | 环境变量 | 作用 | 缺省 |
 |---|---|---|
-| `API_UPSTREAM` | 后端地址（注入容器 `-e`） | 镜像内 `http://handicap-server:8080` |
+| `API_UPSTREAM` | 后端地址（注入容器 `-e`） | 镜像内 `http://gyz-server:8080` |
 | `NODE_IMAGE` / `NGINX_IMAGE` / `NPM_REGISTRY` | 弱网换源（build-arg 透传，如 `docker.m.daocloud.io/library/node:22-alpine`） | Dockerfile 默认 |
 | `KEEP` | prune 保留版本数 | 5 |
 | `CHECK=1` | 构建前先跑 `npm run typecheck`（弱网下 docker build 前快速失败） | 关 |
@@ -60,7 +60,7 @@ See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rule
 - build 失败直接退出、旧容器毫发无损；新版本健康检查不过则自动切回上一版
 - 版本号与 git 提交打进镜像（`IMAGE_TAG` / `GIT_REV` env），tag 被 prune 清掉后 `docker inspect` 仍可溯源
 - 脏工作区发版会警告（建议先提交再发版，镜像 `GIT_REV` 记录的是当时 HEAD）
-- 前提：后端 GoProject 仓库的 compose 已起——本容器加入其 `goproject_default` 网络直连 `handicap-server`；nginx 静态 `proxy_pass` 启动时解析容器名，先起后端再发前端，顺序颠倒靠 `--restart unless-stopped` 自愈
+- 前提：后端 GoProject 仓库的 compose 已起——本容器加入其 `goproject_default` 网络直连 `gyz-server`；nginx 静态 `proxy_pass` 启动时解析容器名，先起后端再发前端，顺序颠倒靠 `--restart unless-stopped` 自愈
 
 回滚演练：
 
